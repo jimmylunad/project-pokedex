@@ -1,7 +1,8 @@
+import { useState, useEffect } from 'react';
 import { Container, Grid } from '@mui/material';
 import Search from '../../components/Search';
-
 import ListCards from '../../components/ListCards';
+import useFetch from '../../services/useFetch';
 
 import {
   Header,
@@ -12,7 +13,24 @@ import {
 } from './styles';
 
 const Home = () => {
-  const url = 'https://pokeapi.co/api/v2/pokemon';
+  const [list, setList] = useState([]);
+  const fetch = useFetch({
+    initialUrl: 'https://pokeapi.co/api/v2/pokemon',
+  });
+  // const url = 'https://pokeapi.co/api/v2/pokemon';
+  const getPokemons = async () => {
+    const response = await fetch.fetch();
+    console.log({ response });
+    if (response.status === 200) {
+      setList(response.data.results);
+    } else {
+      alert('Error en la consulta');
+    }
+  };
+
+  useEffect(() => {
+    getPokemons();
+  }, []);
 
   const handleClick = (e) => {
     e.preventDefault();
@@ -34,7 +52,7 @@ const Home = () => {
           </div>
         </Grid>
         <Grid item xs={12}>
-          <ListCards url={url} />
+          <ListCards list={list} />
           <ContainerButton>
             <Button variant="contained" onClick={handleClick}>
               Cargar más Pokemons

@@ -1,60 +1,39 @@
-import { useEffect, useReducer, useRef } from 'react';
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from 'react';
+import axios from 'axios';
 
-const useFetch = (url, resStructure, options) => {
-  const cache = useRef({});
-  const cancelRequest = useRef(false);
+const useFetch = ({
+  initialUrl = '',
+  initialForm = {},
+  initialMethod = 'get',
+  contentType = 'application/json',
+  loading = false,
+}) => {
+  const [url, setUrl] = useState(initialUrl);
+  const [form, setForm] = useState(initialForm);
+  const [method, setMethod] = useState(initialMethod);
+  const [isLoading, setIsLoading] = useState(loading);
+  const { CancelToken } = axios;
+  const { token, cancel } = CancelToken.source();
 
-  const initialState = {
-    error: undefined,
-    data: undefined,
+  useEffect(() => () => cancel('xxxx'), []);
+
+  const fetch = async () => {
+    setIsLoading(true);
+    const response = await axios({
+      url,
+      method,
+      // config: {}
+    });
+    // validar estados o code
+    setIsLoading(false);
+    return response;
   };
 
-  const fetchReducer = (state, action) => {
-    switch (action.type) {
-      case 'loading':
-        return { ...initialState };
-      case 'fetched':
-        return { ...initialState, data: action.payload };
-      case 'error':
-        return { ...initialState, error: action.payload };
-      default:
-        return state;
-    }
+  return {
+    fetch,
+    isLoading,
   };
-
-  const [state, dispatch] = useReducer(fetchReducer, initialState);
-
-  const fetchData = async () => {
-    dispatch({ type: 'loading' });
-
-    if (cache.current[url]) {
-      dispatch({ type: 'fetched', payload: cache.current[url] });
-      return;
-    }
-
-    try {
-      const response = await fetch(url, options);
-      if (!response.ok) throw new Error(response.statusText);
-
-      const data = (await response.json());
-      cache.current[url] = data;
-
-      if (cancelRequest.current) return;
-      dispatch({ type: 'fetched', payload: resStructure ? resStructure(data) : data });
-    } catch (error) {
-      if (cancelRequest.current) return;
-      dispatch({ type: 'error', payload: error });
-    }
-  };
-
-  useEffect(() => {
-    if (!url) return;
-    fetchData();
-    // eslint-disable-next-line consistent-return
-    return () => { cancelRequest.current = true; };
-  }, [url]);
-
-  return state;
 };
 
 export default useFetch;
